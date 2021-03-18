@@ -59,4 +59,8 @@ target subgroupid = subgroup target
 
 # CARA NGERUN
 
-## run app.py, harusnya keliatan di port berapa dia jalan
+
+```
+pip install requirements.txt
+py app.py
+```

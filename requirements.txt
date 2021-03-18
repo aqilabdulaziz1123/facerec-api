@@ -1,0 +1,6 @@
+dlib
+cmake
+mysql-connector
+face_recognition
+flask
+numpy
