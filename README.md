@@ -55,3 +55,8 @@ imagefile (type image) = file wajah yang ingin di recognize
 target subgroupid = subgroup target
 '/recognize',methods=['POST']
 ```
+
+
+# CARA NGERUN
+
+## run app.py, harusnya keliatan di port berapa dia jalan
