@@ -1,0 +1,38 @@
+CREATE TABLE pengguna (
+	Id int NOT NULL,
+	Username varchar(50),
+	Role varchar(50),
+	PRIMARY KEY (Id)
+	);
+	
+CREATE TABLE Groups (
+	GroupID int NOT NULL,
+	GroupName varchar(50),
+	PRIMARY KEY (GroupID)
+	);
+	
+CREATE TABLE SubGroups (
+	SubGroupID int NOT NULL,
+	GroupID int NOT NULL,
+	PRIMARY KEY (SubGroupID),
+	FOREIGN KEY (GroupID) REFERENCES Groups(GroupID)
+	);
+	
+CREATE TABLE UserInSubGroup (
+	Id int NOT NULL,
+	GroupID int NOT NULL,
+	FOREIGN KEY (Id) REFERENCES Pengguna(Id),
+	FOREIGN KEY (GroupID) REFERENCES SubGroups(SubGroupID)
+	);
+	
+ALTER TABLE SubGroups 
+	ADD SubGroupName char(50);
+	
+CREATE TABLE Encoding (
+	FaceID int NOT NULL,
+	SubGroupID int NOT NULL,
+	FaceOwner char(50),
+	EncodingBLOB BLOB NOT NULL,
+	PRIMARY KEY (FaceID),
+	FOREIGN KEY(SubGroupID) REFERENCES SubGroups(SubGroupID)
+	);
