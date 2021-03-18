@@ -1,17 +1,22 @@
 from flask import Flask, request, jsonify
 from facehandler import makeBlob, fromBlob, compare
+from mysql.connector import connect, Error
+from dbSeed import con, cur
 
 
 app = Flask(__name__)
 
-# request body = groupname, array berisi daftar subgroupname minimal berisi 1
+# request body = groupname
 @app.route('/addGroup', methods=['POST'])
 def addG():
     req = request.json
     name = req['groupname']
-    for i in req['subs']:
-        #insertsub to db
-        pass
+    query = 'INSERT INTO groups(groupName) VALUES(%s)'
+    try:
+        cur.execute(query,name)
+        con.commit()
+    except Error as E:
+        return jsonify({'error' : E})
     return 200,'succeed'
 
 # request body = subgroupname, groupID
@@ -21,45 +26,90 @@ def addSG():
     name = req['subgroupname']
     groupId = req['groupID']
     #database insert subgroup
+    query = 'INSERT INTO subgroups(groupID,subgroupName) VALUES (%s,%s)'
+    try:
+        cur.execute(query,(groupId,name))
+        con.commit()
+    except Error as E:
+        return jsonify({'error' : E})
     return "suceed"
 
-# body = userid, role, array of subgroupIDs
+# body = userid, role
 @app.route('/signup', methods=['POST'])
 def sign():
     req = request.json
     uname = req['userid']
     role = req['role']
-    if role not in ['Superuser','User']:
-        return "invalid role"
-    #database insert user
+    if role.lower() not in ['superuser','user']:
+        return jsonify({'error' : "invalid role"})
+    query = 'INSERT INTO USER (username,role) VALUES (%s,%s)'
+    try:
+        cur.execute(query,(uname,role))
+        con.commit()
+    except Error as E:
+        print(E)
+        return 500,jsonify({"error" : "error"})
     return "succeed"
+
+
+# body = id, subgrouptoenter
+@app.route('/entersubgroup', methods=['POST'])
+def enter():
+    req = request.json
+    query = 'INSERT INTO userinsubgroup VALUES (%s,%s)'
+    try:
+        cur.execute(query,(req['id'],req['subgroup']))
+        con.commit()
+    except Error as E:
+        return E
+    return "Success"
 
 # request body = userid, name, imagefile, subgroupid
 # returns success message
 @app.route('/enroll', methods=['POST'])
 def enroll():
-        role = 'Superuser'
+        # role = 'Superuser'
+        req = request.form
+        user = req['userid']
         # role = select role from database where userid = userid
-        if role is not 'Superuser':
-            return 401,"Invalid role"
-        req = request.json
-        imgfile = request.form['image']
-        blob = makeBlob(imgfile)
+        print(user)
+        query = f"SELECT role FROM user WHERE username='{user}'"
+        cur.execute(query)
+        role = cur.fetchall()
+        print(role[0][0])
+        if role[0][0] != 'superuser':
+            return jsonify({"error" : 401, "reason" : "Invalid role"})
+        # imgfile = req['image']
+        # print(req['image'])
+        blob = makeBlob(request.files['image'])
         # insert to database (subgroupid,name,blob)
-        return 200, "succeed"
+        query = 'INSERT INTO encoding (subgroupID, faceOwner, encodingblob) VALUES (%s,%s,%s)'
+        try:
+            cur.execute(query,(req['subgroupid'],req['name'],blob))
+            con.commit()
+        except Error as E:
+            return jsonify({'error' : E})
+        return jsonify({"STATUS" : 200,"MESSAGE" : "succeed"})
 
-# request body = userid, imagefile, target subgroupid, 
+# request body = imagefile, target subgroupid
 @app.route('/recognize',methods=['POST'])
 def recognize():
-    req = request.json
-    imgfile = request.form['image']
-    x = []
+    req = request.form
+    imgfile = request.files['image']
     # x = select from name,encodings where subgroupid =  req['subgroupid']
+    try:
+        query = f'SELECT faceOwner,encodingblob FROM encoding WHERE subgroupid={req["subgroupid"]}'
+        cur.execute(query)
+    except Error as E:
+        print(E)
+        return "error bre"
+    x = cur.fetchall()
     knownEncodings = []
     knownNames = []
     for i in x:
-        knownEncodings.append(i[1])
+        knownEncodings.append(fromBlob(i[1])    )
         knownNames.append(i[0])
+    print(knownNames)
     return jsonify({'Result' : compare(imgfile,knownEncodings,knownNames)})
 
 

@@ -6,18 +6,19 @@ import numpy as np
 def makeBlob(imagefile):
     image = load_image_file(imagefile)
     encoding = face_encodings(image)
-    print(encoding)
+    # print(encoding)
     return np.array(encoding).tostring()
 
-
+# def makeBlob(filename)
 # returns feature vector
 def fromBlob(blob):
-    return np.frombuffer(blob, dtype=float64)
+    return np.frombuffer(blob, dtype=np.float64)
 
 def compare(imgfile, knownEncodings, knownNames):
     image = load_image_file(imgfile)
-    encoding = face_encodings(image)
+    encoding = face_encodings(image)[0]
     matches = compare_faces(knownEncodings, encoding)
+    # print(matches)
     for match, name in zip(matches,knownNames):
         if match:
             return name
