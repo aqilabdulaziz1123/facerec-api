@@ -4,7 +4,7 @@ from mysql.connector import connect, Error
 from dbSeed import con, cur
 
 
-app = Flask(__name__,port=)
+app = Flask(__name__)
 
 # request body = groupname
 @app.route('/addGroup', methods=['POST'])
@@ -127,4 +127,4 @@ def printa():
 
 
 
-app.run()
+app.run(port=9000)
