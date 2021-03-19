@@ -4,7 +4,7 @@ from mysql.connector import connect, Error
 from dbSeed import con, cur
 
 
-app = Flask(__name__)
+app = Flask(__name__,port=)
 
 # request body = groupname
 @app.route('/addGroup', methods=['POST'])
@@ -42,13 +42,13 @@ def sign():
     role = req['role']
     if role.lower() not in ['superuser','user']:
         return jsonify({'error' : "invalid role"})
-    query = 'INSERT INTO USER (username,role) VALUES (%s,%s)'
+    query = 'INSERT INTO user (username,role) VALUES (%s,%s)'
     try:
         cur.execute(query,(uname,role))
         con.commit()
     except Error as E:
-        print(E)
-        return 500,jsonify({"error" : "error"})
+        # print(E)
+        return 500,jsonify({"error" : str(E)})
     return "succeed"
 
 
@@ -73,14 +73,15 @@ def enroll():
         user = req['userid']
         # role = select role from database where userid = userid
         print(user)
-        query = f"SELECT role FROM user WHERE username='{user}'"
-        cur.execute(query)
+        try:
+            query = f"SELECT role FROM user WHERE username='{user}'"
+            cur.execute(query)
+        except Error as E:
+            return str(E)
         role = cur.fetchall()
-        print(role[0][0])
+        # print(role[0][0])
         if role[0][0] != 'superuser':
             return jsonify({"error" : 401, "reason" : "Invalid role"})
-        # imgfile = req['image']
-        # print(req['image'])
         blob = makeBlob(request.files['image'])
         # insert to database (subgroupid,name,blob)
         query = 'INSERT INTO encoding (subgroupID, faceOwner, encodingblob) VALUES (%s,%s,%s)'
@@ -88,7 +89,7 @@ def enroll():
             cur.execute(query,(req['subgroupid'],req['name'],blob))
             con.commit()
         except Error as E:
-            return jsonify({'error' : E})
+            return jsonify({'error' : str(E)})
         return jsonify({"STATUS" : 200,"MESSAGE" : "succeed"})
 
 # request body = imagefile, target subgroupid
@@ -101,8 +102,8 @@ def recognize():
         query = f'SELECT faceOwner,encodingblob FROM encoding WHERE subgroupid={req["subgroupid"]}'
         cur.execute(query)
     except Error as E:
-        print(E)
-        return "error bre"
+        # print(E)
+        return str(E)
     x = cur.fetchall()
     knownEncodings = []
     knownNames = []
