@@ -4,8 +4,8 @@ import os
 
 host = "127.0.0.1"
 port = 3306
-username = "root"
-password = ""
+username = "rut"
+password = "password"
 database = "fr"
 
 try:
