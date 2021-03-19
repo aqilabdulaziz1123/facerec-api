@@ -99,7 +99,7 @@ def recognize():
     imgfile = request.files['image']
     # x = select from name,encodings where subgroupid =  req['subgroupid']
     try:
-        query = f'SELECT faceOwner,encodingblob FROM encoding WHERE subgroupid={req["subgroupid"]}'
+        query = f"SELECT faceOwner,encodingblob FROM encoding WHERE subgroupid='{req["subgroupid"]}'"
         cur.execute(query)
     except Error as E:
         # print(E)
