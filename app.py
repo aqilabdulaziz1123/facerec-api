@@ -34,6 +34,17 @@ def addSG():
         return jsonify({'error' : E})
     return "suceed"
 
+#2. select list grup list subgrup
+@app.route('/listGroup', methods=['GET'])
+def listG():
+    query = 'SELECT * FROM groups JOIN subgroups ON groups.groupID = subgroups.groupID'
+    # try:
+    cur.execute(query)
+    temp = cur.fetchall()
+    # except Error as E:
+    #     return jsonify({'error' : E})
+    return jsonify(temp)
+
 # body = userid, role
 @app.route('/signup', methods=['POST'])
 def sign():
