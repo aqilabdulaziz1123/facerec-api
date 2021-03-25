@@ -126,5 +126,23 @@ def printa():
     return jsonify({'hi' : 'fagt'})
 
 
+# Shodiq
+@app.route('/selectFaces', methods=['POST'])
+def selectFaces():
+    req = request.json
+    try:
+        query = f'''
+        SELECT faceID, faceOwner FROM encoding WHERE subgroupID={req['subgroupid']}
+        '''
+        cur.execute(query)
+    except Error as E:
+        print(E)
+        return 'Err'
+    data = cur.fetchall()
+    mylist = []
+    for i in data:
+        mylist.append(i)
+    return jsonify({'Result' : mylist})
+
 
 app.run(port=9000)
