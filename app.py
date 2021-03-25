@@ -126,7 +126,6 @@ def printa():
     return jsonify({'hi' : 'fagt'})
 
 
-# Shodiq
 @app.route('/selectFaces', methods=['POST'])
 def selectFaces():
     req = request.json
