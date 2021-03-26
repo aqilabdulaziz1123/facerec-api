@@ -1,32 +1,36 @@
 CREATE TABLE user(
-    -> id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    -> username varchar(50),
-    -> role enum('superuser','user')
-    -> );
+id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+username varchar(50),
+role enum('superuser','user')
+);
 	
 CREATE TABLE groups(
-    -> groupID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    -> groupName varchar(50)
-    -> );
+groupID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+groupName varchar(50)
+);
 	
 CREATE TABLE subGroups(
-    -> subgroupID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    -> groupID INT NOT NULL,
-    -> subgroupName VARCHAR(50),
-    -> FOREIGN KEY (groupID) REFERENCES groups(groupID)
-    -> );
+subgroupID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+groupID INT NOT NULL,
+subgroupName VARCHAR(50),
+FOREIGN KEY (groupID) REFERENCES groups(groupID)
+);
 	
 CREATE TABLE userInSubgroup(
-    -> id INT NOT NULL,
-    -> groupID INT NOT NULL,
-    -> FOREIGN KEY (id) REFERENCES user(id),
-    -> FOREIGN KEY (groupID) REFERENCES subGroups(subgroupID)
-    -> );
+id INT NOT NULL,
+groupID INT NOT NULL,
+FOREIGN KEY (id) REFERENCES user(id),
+FOREIGN KEY (groupID) REFERENCES subGroups(subgroupID)
+);
 	
-CREATE TABLE Encoding(
-    -> faceID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    -> subgroupID INT NOT NULL,
-    -> faceOwner VARCHAR(50),
-    -> encodingblob BLOB NOT NULL,
-    -> FOREIGN KEY (subgroupID) REFERENCES subGroups(subgroupID)
-    -> );
+CREATE TABLE encoding(
+faceID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+subgroupID INT NOT NULL,
+faceOwner VARCHAR(50),
+encodingblob BLOB NOT NULL,
+FOREIGN KEY (subgroupID) REFERENCES subGroups(subgroupID)
+);
+
+CREATE TABLE images(
+faceOwner VARCHAR(200),
+path VARCHAR(200));
