@@ -154,7 +154,7 @@ def selectFaces():
     return jsonify({'Result' : mylist})
 
 @app.route('/deleteFace', methods=['GET'])
-def selectFaces():
+def deleteface():
     req = request.args
     try:
         query2 = f"DELETE FROM images WHERE id={req['id']}"
@@ -165,7 +165,7 @@ def selectFaces():
         print(E)
         return 'Err'
     con.commit()
-    return "Succeed"
+    return "Succeed "
 
 @app.route('/viewFace', methods=['GET'])
 def view():
