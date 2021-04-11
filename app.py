@@ -5,28 +5,51 @@ from dbSeed import con, cur
 from fileHandler import saveFile
 from copy import deepcopy
 import os
+from flask_httpauth import HTTPBasicAuth
+from minio import Minio
+from minio.error import S3Error
+from sys import getsizeof
+from PIL import Image
+from io import BytesIO
+from flask_jwt_extended import create_access_token, JWTManager, jwt_required, get_jwt_identity
 
 
 app = Flask(__name__)
+app.config["JWT_SECRET_KEY"] = "secreto"
+jwt = JWTManager(app)
 ALLOWED_EXTENSIONS = ['png','jpg']
 UPLOAD_FOLDER = 'images'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+client = Minio( 
+    "play.min.io", #ini kudu diganti keknya karena ini cuma buat trial gitu
+    access_key="Q3AM3UQ867SPQQA43P2F",
+    secret_key="zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG"
+)
+
+@app.route("/getToken", methods=['GET'])
+def getToken():
+    # add login later if needed
+    return jsonify(token=create_access_token(identity="admin"),howto="tambahin header 'Authorization' trus valuenya 'Bearer *tokennya   *'")
+
+
 # request body = groupname
 @app.route('/addGroup', methods=['POST'])
+@jwt_required()
 def addG():
     req = request.json
     name = req['groupname']
-    query = 'INSERT INTO groups(groupName) VALUES(%s)'
+    query = f"INSERT INTO groups(groupName) VALUES('{name}')"
     try:
-        cur.execute(query,name)
+        cur.execute(query)
         con.commit()
     except Error as E:
-        return jsonify({'error' : E})
-    return 200,'succeed'
+        return jsonify({'error' : str(E)})
+    return jsonify({"user" : get_jwt_identity(), "result" : "Succeed"})
 
 # request body = subgroupname, groupID
 @app.route('/addSubgroup', methods=['POST'])
+@jwt_required()
 def addSG():
     req = request.json
     name = req['subgroupname']
@@ -42,6 +65,7 @@ def addSG():
 
 #2. select list grup list subgrup
 @app.route('/listGroup', methods=['GET'])
+# @jwt_required()
 def listG():
     query = 'SELECT * FROM groups NATURAL JOIN subgroups'
     # try:
@@ -71,6 +95,7 @@ def sign():
 
 # body = id, subgrouptoenter
 @app.route('/entersubgroup', methods=['POST'])
+@jwt_required()
 def enter():
     req = request.json
     query = 'INSERT INTO userinsubgroup VALUES (%s,%s)'
@@ -84,32 +109,28 @@ def enter():
 # request body = userid, name, imagefile, subgroupid
 # returns success message
 @app.route('/enroll', methods=['POST'])
+@jwt_required()
 def enroll():
     # role = 'Superuser'
     req  = request.form
     print(req)
     user = req['userid']
     imgfile = request.files['image'] 
-    # toblob = request.files['image']
-    # role = select role from database where userid = userid
     try:
         query = f"SELECT role FROM user WHERE username='{user}'"
         cur.execute(query)
     except Error as E:
         return str(E)
     role = cur.fetchall()
-    # print(role[0][0])
     if role[0][0] != 'superuser':
         return jsonify({"error" : 401, "reason" : "Invalid role"})
-    # blob = makeBlob(imgfile)
-    # toblob = deepcopy(imgfile)
-    # insert to database (subgroupid,name,blob)
     query = 'INSERT INTO encoding (subgroupID, faceOwner, encodingblob) VALUES (%s,%s,%s)'
     query2 = "UPDATE encoding SET encodingblob=%s WHERE faceID=%s"
     try:
         cur.execute(query,(req['subgroupid'],req['name'],""))
         lastid = cur.lastrowid
-        saveFile(lastid, imgfile, req['name'], UPLOAD_FOLDER)  
+        saveFile(lastid, imgfile, req['name'], UPLOAD_FOLDER, client)  
+        imgfile.seek(0)
         x = makeBlob(imgfile)
         cur.execute(query2,(x,lastid)) 
         con.commit()
@@ -119,24 +140,36 @@ def enroll():
 
 # request body = imagefile, target subgroupid
 @app.route('/recognize',methods=['POST'])
+@jwt_required()
 def recognize():
     req = request.form
     imgfile = request.files['image']
-    # x = select from name,encodings where subgroupid =  req['subgroupid']
     try:
-        query = f"SELECT faceOwner,encodingblob FROM encoding WHERE subgroupID='{req['subgroupid']}'"
+        query = f"SELECT faceOwner,encodingblob FROM encoding WHERE subgroupID={req['subgroupid']}"
         cur.execute(query)
     except Error as E:
         # print(E)
         return str(E)
     x = cur.fetchall()
+    # print(x.shape)
+    print(len(x))
+    # print(len(x[0]))
+    # knownEncodings = np.array([[]])
     knownEncodings = []
     knownNames = []
     for i in x:
-        knownEncodings.append(fromBlob(i[1])    )
-        knownNames.append(i[0])
-    print(knownNames)
-    return jsonify({'Result' : compare(imgfile,knownEncodings,knownNames)})
+        # print(i)
+        if i:
+            # knownEncodings = np.append(knownEncodings,[fromBlob(i[1])])
+            knownEncodings.append(fromBlob(i[1]))
+            knownNames.append(i[0])
+    # print(knownNames)
+    # if knownEncodings.any():
+    #     res = compare(imgfile,knownEncodings,knownNames)
+    # else:
+    #     res = "unknown"
+    res = compare(imgfile, knownEncodings, knownNames)
+    return jsonify({'Result' : res})
 
 @app.route('/selectFaces', methods=['GET'])
 def selectFaces():
@@ -167,23 +200,93 @@ def deleteface():
     con.commit()
     return "Succeed "
 
+# @app.route('/viewFace', methods=['GET'])
+# def view():
+#     req = request.args
+#     try:
+#         query = f"SELECT path FROM images WHERE id={req['faceid']}"
+#         cur.execute(query)
+#     except Error as E:
+#         return str(E)
+#     data = cur.fetchall()
+#     url = os.path.join(app.config['UPLOAD_FOLDER'],data[0][0].split('/')[-1])
+#     html = '''
+#     '''
+#     if data:
+#         # print('../'+data[0][0])
+#         return render_template('showimage.html',name=req['faceid'],user_image=url)
+#     else:
+#         return "Face not found"
+
 @app.route('/viewFace', methods=['GET'])
 def view():
-    req = request.args
-    try:
-        query = f"SELECT path FROM images WHERE id={req['faceid']}"
-        cur.execute(query)
-    except Error as E:
-        return str(E)
-    data = cur.fetchall()
-    url = os.path.join(app.config['UPLOAD_FOLDER'],data[0][0].split('/')[-1])
-    html = '''
-    '''
-    if data:
-        # print('../'+data[0][0])
-        return render_template('showimage.html',name=req['faceid'],user_image=url)
+    filename = request.args['filename']
+    if client.bucket_exists('facerecimages'):
+        resp = client.get_object('facerecimages',filename)
+        byt = resp.data
+        print(byt)
+        stream = BytesIO(byt)
+        img = Image.open(stream)
+        img.save('test.jpg')
+        # x = resp.read(decode_content=True)
+        # print(x)
     else:
-        return "Face not found"
+        return "bucket not found"
+    return render_template("showimage.html",name=filename,user_image='test.jpg')
+
+@app.route('/tesminio', methods=['GET','POST'])
+def minio():
+    if request.method == 'POST':
+        req  = request.form
+        user = req['userid']
+        imgfile = request.files['image']
+        x = getsizeof(imgfile)
+        bytestr = imgfile.read()
+        print(bytestr)
+        stream = BytesIO(bytestr)
+        name = req['name']
+        if client.bucket_exists("facerecimages"):
+            pass
+        else:
+            client.make_bucket("facerecimages")
+        client.put_object("facerecimages", name, stream, len(bytestr))
+    elif request.method == 'GET':
+        filename = request.args['filename']
+        if client.bucket_exists('facerecimages'):
+            resp = client.get_object('facerecimages',filename)
+            byt = resp.data
+            print(byt)
+            stream = BytesIO(byt)
+            img = Image.open(stream)
+            img.save('test.jpg')
+            # x = resp.read(decode_content=True)
+            # print(x)
+        else:
+            return "bucket not found"
+        return "done"
+
+    
+    # try:
+    #     query = f"SELECT role FROM user WHERE username='{user}'"
+    #     cur.execute(query)
+    # except Error as E:
+    #     return str(E)
+    # role = cur.fetchall()
+    # if role[0][0] != 'superuser':
+    #     return jsonify({"error" : 401, "reason" : "Invalid role"})
+    # query = 'INSERT INTO encoding (subgroupID, faceOwner, encodingblob) VALUES (%s,%s,%s)'
+    # query2 = "UPDATE encoding SET encodingblob=%s WHERE faceID=%s"
+    # try:
+    #     cur.execute(query,(req['subgroupid'],req['name'],""))
+    #     lastid = cur.lastrowid
+    #     saveFile(lastid, imgfile, req['name'], UPLOAD_FOLDER)  
+    #     x = makeBlob(imgfile)
+    #     cur.execute(query2,(x,lastid)) 
+    #     # con.commit()
+    # except Error as E:
+    #     return jsonify({'error' : str(E)})
+    return jsonify({"STATUS" : 200,"MESSAGE" : "succeed"})
+
 
 if __name__ == '__main__':
     app.debug=True

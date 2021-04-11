@@ -17,8 +17,12 @@ def fromBlob(blob):
 def compare(imgfile, knownEncodings, knownNames):
     image = load_image_file(imgfile)
     encoding = face_encodings(image)[0]
+    # for face in knownEncodings:
+    # ke = np.array(knownEncodings)
+    # print(knownEncodings.shape)
+    # print(encoding.shape)
     matches = compare_faces(knownEncodings, encoding)
-    # print(matches)
+    print(matches)
     for match, name in zip(matches,knownNames):
         if match:
             return name
