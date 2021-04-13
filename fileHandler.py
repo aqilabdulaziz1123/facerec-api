@@ -8,9 +8,9 @@ def allowed(filename):
 
 def saveFile(idF, imgfile, faceOwner, upload_folder, client):
     # if allowed(file.name):
-    query = "INSERT INTO images(id, faceOwner, path) VALUES(%s,%s,%s)"
-    cur.execute(query,(idF,faceOwner,faceOwner))
-    con.commit()
+    # query = "INSERT INTO images(id, faceOwner, path) VALUES(%s,%s,%s)"
+    # cur.execute(query,(idF,faceOwner,faceOwner))
+    # con.commit()
     bytestr = imgfile.read()
     stream = BytesIO(bytestr)
     if client.bucket_exists("facerecimages"):

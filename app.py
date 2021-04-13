@@ -54,7 +54,6 @@ def addSG():
     req = request.json
     name = req['subgroupname']
     groupId = req['groupID']
-    #database insert subgroup
     query = 'INSERT INTO subgroups(groupID,subgroupName) VALUES (%s,%s)'
     try:
         cur.execute(query,(groupId,name))
@@ -158,17 +157,12 @@ def recognize():
     knownEncodings = []
     knownNames = []
     for i in x:
-        # print(i)
-        if i:
-            # knownEncodings = np.append(knownEncodings,[fromBlob(i[1])])
-            knownEncodings.append(fromBlob(i[1]))
-            knownNames.append(i[0])
-    # print(knownNames)
-    # if knownEncodings.any():
-    #     res = compare(imgfile,knownEncodings,knownNames)
-    # else:
-    #     res = "unknown"
-    res = compare(imgfile, knownEncodings, knownNames)
+        # if i:
+            # knownEncodings.append(fromBlob(i[1]))
+            # knownNames.append(i[0])
+        res = compare(imgfile, [fromBlob(i[1])],[i[0]])
+        if res != 'unknown name':
+            return res
     return jsonify({'Result' : res})
 
 @app.route('/selectFaces', methods=['GET'])
@@ -199,24 +193,6 @@ def deleteface():
         return 'Err'
     con.commit()
     return "Succeed "
-
-# @app.route('/viewFace', methods=['GET'])
-# def view():
-#     req = request.args
-#     try:
-#         query = f"SELECT path FROM images WHERE id={req['faceid']}"
-#         cur.execute(query)
-#     except Error as E:
-#         return str(E)
-#     data = cur.fetchall()
-#     url = os.path.join(app.config['UPLOAD_FOLDER'],data[0][0].split('/')[-1])
-#     html = '''
-#     '''
-#     if data:
-#         # print('../'+data[0][0])
-#         return render_template('showimage.html',name=req['faceid'],user_image=url)
-#     else:
-#         return "Face not found"
 
 @app.route('/viewFace', methods=['GET'])
 def view():
