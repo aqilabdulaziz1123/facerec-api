@@ -12,9 +12,11 @@ from sys import getsizeof
 from PIL import Image
 from io import BytesIO
 from flask_jwt_extended import create_access_token, JWTManager, jwt_required, get_jwt_identity
+from flask_cors import CORS
 
 
 app = Flask(__name__)
+CORS(app)
 app.config["JWT_SECRET_KEY"] = "secreto"
 jwt = JWTManager(app)
 ALLOWED_EXTENSIONS = ['png','jpg']
