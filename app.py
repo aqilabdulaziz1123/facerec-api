@@ -107,7 +107,7 @@ def enter():
         return E
     return "Success"
 
-# request body = userid, name, imagefile, subgroupid
+# request body = userid, name, image, subgroupid
 # returns success message
 @app.route('/enroll', methods=['POST'])
 @jwt_required()
@@ -130,14 +130,14 @@ def enroll():
     try:
         cur.execute(query,(req['subgroupid'],req['name'],""))
         lastid = cur.lastrowid
-        saveFile(lastid, imgfile, req['name'], UPLOAD_FOLDER, client)  
+        saveFile(lastid, imgfile, UPLOAD_FOLDER, client)  
         imgfile.seek(0)
         x = makeBlob(imgfile)
         cur.execute(query2,(x,lastid)) 
         con.commit()
+        return jsonify({"last face id" : lastid})
     except Error as E:
         return jsonify({'error' : str(E)})
-    return jsonify({"STATUS" : 200,"MESSAGE" : "succeed"})
 
 # request body = imagefile, target subgroupid
 @app.route('/recognize',methods=['POST'])
@@ -152,16 +152,9 @@ def recognize():
         # print(E)
         return str(E)
     x = cur.fetchall()
-    # print(x.shape)
-    print(len(x))
-    # print(len(x[0]))
-    # knownEncodings = np.array([[]])
     knownEncodings = []
     knownNames = []
     for i in x:
-        # if i:
-            # knownEncodings.append(fromBlob(i[1]))
-            # knownNames.append(i[0])
         res = compare(imgfile, [fromBlob(i[1])],[i[0]])
         if res != 'unknown name':
             return res
@@ -211,6 +204,23 @@ def view():
     else:
         return "bucket not found"
     return render_template("showimage.html",name=filename,user_image='test.jpg')
+
+
+@app.route('/getFace', methods=['GET'])
+def byteface():
+    idF = request.args['id']
+    if client.bucket_exists('facerecimages'):
+        resp = client.get_object('facerecimages',str(idF))
+        byt = resp.data
+        # print(byt)
+        
+        # KALO MAU NGESAVE JADI FILE LOCAL
+        # stream = BytesIO(byt)
+        # img = Image.open(stream)
+        # img.save('test.jpg')
+    else:
+        return jsonify({"error" : "bucket not found"})
+    return jsonify({"imagebytedata" : str(byt)})
 
 @app.route('/tesminio', methods=['GET','POST'])
 def minio():
