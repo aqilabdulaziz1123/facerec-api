@@ -117,7 +117,8 @@ def enroll():
     print(req)
     user = req['userid']
     imgfile = request.files['image'] 
-    filetype = req['filename'].split('.')[-1]
+    # print(imgfile.filename)
+    # filetype = req['filename'].split('.')[-1]
     try:
         query = f"SELECT role FROM user WHERE username='{user}'"
         cur.execute(query)
@@ -131,7 +132,7 @@ def enroll():
     try:
         cur.execute(query,(req['subgroupid'],req['name'],""))
         lastid = cur.lastrowid
-        saveFile(lastid, imgfile, filetype, UPLOAD_FOLDER, client)  
+        saveFile(lastid, imgfile, UPLOAD_FOLDER, client)  
         imgfile.seek(0)
         x = makeBlob(imgfile)
         cur.execute(query2,(x,lastid)) 

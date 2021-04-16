@@ -7,12 +7,12 @@ def allowed(filename):
     return filename.split('.')[-1] in ALLOWED_EXTENSIONS
 
 
-def saveFile(idF, imgfile, filetype, upload_folder, client):
+def saveFile(idF, imgfile, upload_folder, client):
     # if allowed(file.name):
     # filetype = imgfile.name.split('.')[-1]
     # images tadinya ga kepake, skrg dibuat nyimpen filetype
     query = "INSERT INTO images(id, faceOwner, path) VALUES(%s,%s,%s)"
-    cur.execute(query,(idF,"",filetype))
+    cur.execute(query,(idF,"",imgfile.filename.split('.')[-1]))
     con.commit()
     bytestr = imgfile.read()
     # stream = BytesIO(bytestr)
