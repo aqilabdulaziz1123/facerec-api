@@ -6,7 +6,8 @@ host = "127.0.0.1"
 port = 3306
 username = "root"
 password = ""
-database = "facerec"
+# database = "facerec"
+database = "facerec_subsub"
 
 try:
     con = connect(host=host, port=port, user=username, password=password, db=database)
