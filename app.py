@@ -143,24 +143,44 @@ def enroll():
 
 # request body = imagefile, target subgroupid
 @app.route('/recognize',methods=['POST'])
-@jwt_required()
+# @jwt_required()
 def recognize():
     req = request.form
     imgfile = request.files['image']
     try:
-        query = f"SELECT faceOwner,encodingblob FROM encoding WHERE subgroupID={req['subgroupid']}"
+        query = f"SELECT faceOwner, encodingBlob FROM encoding WHERE groupID={req['groupid']}"
         cur.execute(query)
     except Error as E:
-        # print(E)
         return str(E)
     x = cur.fetchall()
     knownEncodings = []
     knownNames = []
     for i in x:
-        res = compare(imgfile, [fromBlob(i[1])],[i[0]])
-        if res != 'unknown name':
-            return res
-    return jsonify({'Result' : res})
+        knownEncodings.append(fromBlob(i[1]))
+        knownNames.append(i[0])
+
+    compared = compare(imgfile, knownEncodings, knownNames)
+
+    try:
+        query2 = f'''
+        SELECT groups.groupName, subgroups.subgroupName, subsubgroups.subsubgroupName
+        FROM groups
+        INNER JOIN subgroups
+        ON groups.groupID=subgroups.groupID
+        INNER JOIN subsubgroups
+        ON subgroups.subgroupID=subsubgroups.subsubgroupID
+        INNER JOIN encoding
+        ON encoding.subsubgroupID=subsubgroups.subsubgroupID
+        WHERE encoding.faceOwner=%(name)s
+        '''
+        cur.execute(query2, {'name': compared})
+    except Error as E:
+        return str(E)
+    y = cur.fetchall()
+    temp = []
+    for i in y:
+        temp.append(i)
+    return jsonify({'Group': temp[0][0], 'Subgroup': temp[0][1], 'Subsubgroup': temp[0][2], 'Result': compared})
 
 @app.route('/selectFaces', methods=['GET'])
 def selectFaces():
