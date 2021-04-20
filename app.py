@@ -107,7 +107,7 @@ def enter():
         return E
     return "Success"
 
-# request body = userid, name, image, subgroupid
+# request body = userid, name, image, subgroupid, subsubgroupid, groupid
 # returns success message
 @app.route('/enroll', methods=['POST'])
 @jwt_required()
@@ -116,9 +116,7 @@ def enroll():
     req  = request.form
     print(req)
     user = req['userid']
-    imgfile = request.files['image'] 
-    # print(imgfile.filename)
-    # filetype = req['filename'].split('.')[-1]
+    imgfile = request.files['image']
     try:
         query = f"SELECT role FROM user WHERE username='{user}'"
         cur.execute(query)
@@ -127,10 +125,10 @@ def enroll():
     role = cur.fetchall()
     if role[0][0] != 'superuser':
         return jsonify({"error" : 401, "reason" : "Invalid role"})
-    query = 'INSERT INTO encoding (subgroupID, faceOwner, encodingblob) VALUES (%s,%s,%s)'
+    query = 'INSERT INTO encoding (groupID, subgroupID, subsubgroupID, faceOwner, encodingblob) VALUES (%s,%s,%s,%s,%s)'
     query2 = "UPDATE encoding SET encodingblob=%s WHERE faceID=%s"
     try:
-        cur.execute(query,(req['subgroupid'],req['name'],""))
+        cur.execute(query,(req['groupid'],req['subgroupid'],req['subsubgroupid'],req['name'],""))
         lastid = cur.lastrowid
         saveFile(lastid, imgfile, UPLOAD_FOLDER, client)  
         imgfile.seek(0)
