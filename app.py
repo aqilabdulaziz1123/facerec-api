@@ -110,7 +110,7 @@ def enter():
 # request body = userid, name, image, subgroupid
 # returns success message
 @app.route('/enroll', methods=['POST'])
-@jwt_required()
+# @jwt_required()
 def enroll():
     # role = 'Superuser'
     req  = request.form
@@ -127,10 +127,10 @@ def enroll():
     role = cur.fetchall()
     if role[0][0] != 'superuser':
         return jsonify({"error" : 401, "reason" : "Invalid role"})
-    query = 'INSERT INTO encoding (subgroupID, faceOwner, encodingblob) VALUES (%s,%s,%s)'
+    query = 'INSERT INTO encoding (groupID, subgroupID, subsubgroupID, faceOwner, encodingblob) VALUES (%s,%s,%s,%s,%s)'
     query2 = "UPDATE encoding SET encodingblob=%s WHERE faceID=%s"
     try:
-        cur.execute(query,(req['subgroupid'],req['name'],""))
+        cur.execute(query,(req['groupid'],req['subgroupid'],req['subsubgroupid'],req['name'],""))
         lastid = cur.lastrowid
         saveFile(lastid, imgfile, UPLOAD_FOLDER, client)  
         imgfile.seek(0)
@@ -160,6 +160,10 @@ def recognize():
         knownNames.append(i[0])
 
     compared = compare(imgfile, knownEncodings, knownNames)
+    if compared == 'unknown name':
+        return jsonify({'Result': 'Unknown Face'})
+    if compared == 'error':
+        return jsonify({'Result': 'Please Insert a Face'})
 
     try:
         query2 = f'''
@@ -168,7 +172,7 @@ def recognize():
         INNER JOIN subgroups
         ON groups.groupID=subgroups.groupID
         INNER JOIN subsubgroups
-        ON subgroups.subgroupID=subsubgroups.subsubgroupID
+        ON subgroups.subgroupID=subsubgroups.subgroupID
         INNER JOIN encoding
         ON encoding.subsubgroupID=subsubgroups.subsubgroupID
         WHERE encoding.faceOwner=%(name)s
