@@ -68,7 +68,14 @@ def addSG():
 @app.route('/listGroup', methods=['GET'])
 # @jwt_required()
 def listG():
-    query = 'SELECT groups.*, subgroups.subgroupID, subgroups.subgroupName FROM groups LEFT JOIN subgroups ON groups.groupID=subgroups.groupID'
+    query=f'''
+    SELECT groups.*, subgroups.subgroupID, subgroups.subgroupName, subsubgroups.subsubgroupID, subsubgroups.subsubgroupName
+    FROM subgroups
+    LEFT JOIN subsubgroups
+    ON subgroups.subgroupID=subsubgroups.subgroupID
+    RIGHT JOIN groups
+    ON groups.groupID=subgroups.groupID
+    '''
     # try:
     cur.execute(query)
     temp = cur.fetchall()
