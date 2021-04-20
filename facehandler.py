@@ -15,12 +15,14 @@ def fromBlob(blob):
     return np.frombuffer(blob, dtype=np.float64)
 
 def compare(imgfile, knownEncodings, knownNames):
-    image = load_image_file(imgfile)
-    encoding = face_encodings(image)[0]
-    matches = compare_faces(knownEncodings, encoding)
-    print(matches)
-    for match, name in zip(matches,knownNames):
-        if match:
-            return name
-    return "unknown name"
-    
+    try:
+        image = load_image_file(imgfile)
+        encoding = face_encodings(image)[0]
+        matches = compare_faces(knownEncodings, encoding)
+        print(matches)
+        for match, name in zip(matches,knownNames):
+            if match:
+                return name
+        return "unknown name"
+    except:
+        return "error"

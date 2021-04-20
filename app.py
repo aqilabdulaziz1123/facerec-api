@@ -110,7 +110,7 @@ def enter():
 # request body = userid, name, image, subgroupid, subsubgroupid, groupid
 # returns success message
 @app.route('/enroll', methods=['POST'])
-@jwt_required()
+# @jwt_required()
 def enroll():
     # role = 'Superuser'
     req  = request.form
@@ -158,6 +158,10 @@ def recognize():
         knownNames.append(i[0])
 
     compared = compare(imgfile, knownEncodings, knownNames)
+    if compared == 'unknown name':
+        return jsonify({'Result': 'Unknown Face'})
+    if compared == 'error':
+        return jsonify({'Result': 'Please Insert a Face'})
 
     try:
         query2 = f'''
@@ -166,7 +170,7 @@ def recognize():
         INNER JOIN subgroups
         ON groups.groupID=subgroups.groupID
         INNER JOIN subsubgroups
-        ON subgroups.subgroupID=subsubgroups.subsubgroupID
+        ON subgroups.subgroupID=subsubgroups.subgroupID
         INNER JOIN encoding
         ON encoding.subsubgroupID=subsubgroups.subsubgroupID
         WHERE encoding.faceOwner=%(name)s
