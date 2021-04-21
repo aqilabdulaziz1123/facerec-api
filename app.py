@@ -64,6 +64,22 @@ def addSG():
         return jsonify({'error' : E})
     return "suceed"
 
+# request body = subsubgroupname, subgroupID, groupID
+@app.route('/addSubsubgroup', methods=['POST'])
+# @jwt_required()
+def addSSG():
+    req = request.json
+    name = req['subsubgroupname']
+    groupId = req['groupID']
+    subgroupId = req['subgroupID']
+    query = 'INSERT INTO subsubgroups(groupID,subgroupID,subsubgroupName) VALUES (%s,%s,%s)'
+    try:
+        cur.execute(query,(groupId,subgroupId,name))
+        con.commit()
+    except Error as E:
+        return jsonify({'error' : E})
+    return "Succeed"
+
 #2. select list grup list subgrup
 @app.route('/listGroup', methods=['GET'])
 # @jwt_required()
