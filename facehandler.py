@@ -1,13 +1,16 @@
 # import face_recognition
-from face_recognition import load_image_file, face_encodings, compare_faces
+from face_recognition import load_image_file, face_encodings, compare_faces, face_locations
 import numpy as np
 
 # should be image file blob
 def makeBlob(imagefile):
     image = load_image_file(imagefile)
     encoding = face_encodings(image)
-    # print(encoding)
-    return np.array(encoding).tostring()
+    loc = face_locations(image)
+    if len(loc) > 0:
+        return np.array(encoding).tostring()
+    else:
+        return 'nah'
 
 # def makeBlob(filename)
 # returns feature vector
