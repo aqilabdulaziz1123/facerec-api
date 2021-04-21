@@ -148,17 +148,22 @@ def enroll():
     role = cur.fetchall()
     if role[0][0] != 'superuser':
         return jsonify({"error" : 401, "reason" : "Invalid role"})
-    query = 'INSERT INTO encoding (groupID, subgroupID, subsubgroupID, faceOwner, encodingblob) VALUES (%s,%s,%s,%s,%s)'
-    query2 = "UPDATE encoding SET encodingblob=%s WHERE faceID=%s"
+    
+    x = makeBlob(imgfile)
+    if x == 'nah':
+        return jsonify({'Result': 'Please Insert a Face'})
+    
     try:
-        cur.execute(query,(req['groupid'],req['subgroupid'],req['subsubgroupid'],req['name'],""))
-        lastid = cur.lastrowid
-        saveFile(lastid, imgfile, UPLOAD_FOLDER, client)  
-        imgfile.seek(0)
-        x = makeBlob(imgfile)
-        cur.execute(query2,(x,lastid)) 
+        query = 'INSERT INTO encoding (groupID, subgroupID, subsubgroupID, faceOwner, encodingblob) VALUES (%s,%s,%s,%s,%s)'
+        query2 = "UPDATE encoding SET encodingblob=%s WHERE faceID=%s"
+        cur.execute(query,(req['groupid'],req['subgroupid'],req['subsubgroupid'],req['name'], x))
+        # lastid = cur.lastrowid
+        # saveFile(lastid, imgfile, UPLOAD_FOLDER, client)  
+        # imgfile.seek(0)
+        # cur.execute(query2,(x,lastid)) 
         con.commit()
-        return jsonify({"last face id" : lastid})
+        # return jsonify({"last face id" : lastid})
+        return 'Succeed'
     except Error as E:
         return jsonify({'error' : str(E)})
 
