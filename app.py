@@ -13,6 +13,7 @@ from PIL import Image
 from io import BytesIO
 from flask_jwt_extended import create_access_token, JWTManager, jwt_required, get_jwt_identity
 from flask_cors import CORS
+from downloadHandler import download_by_url
 
 
 app = Flask(__name__)
@@ -333,6 +334,16 @@ def minio():
     #     return jsonify({'error' : str(E)})
     return jsonify({"STATUS" : 200,"MESSAGE" : "succeed"})
 
+@app.route('/download', methods=['GET'])
+def download():
+    req = request.args
+    try:
+        download_by_url(req['url'])
+    except Error as E:
+        print(E)
+        return 'Err'
+    con.commit()
+    return 'Succeed'
 
 if __name__ == '__main__':
     app.debug=True
