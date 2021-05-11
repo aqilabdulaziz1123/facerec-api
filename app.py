@@ -13,7 +13,8 @@ from PIL import Image
 from io import BytesIO
 from flask_jwt_extended import create_access_token, JWTManager, jwt_required, get_jwt_identity
 from flask_cors import CORS
-from downloadHandler import download_by_url
+from downloadHandler import download_by_url, video_to_audio, analyze_video, get_detail, run_inference, np_encoder
+import json
 
 
 app = Flask(__name__)
@@ -338,12 +339,12 @@ def minio():
 def download():
     req = request.args
     try:
-        download_by_url(req['url'])
+        video_path = download_by_url(req['url'])
+        video_to_audio(video_path, 'audio')
+        result = analyze_video(video_path)
     except Error as E:
-        print(E)
         return 'Err'
-    con.commit()
-    return 'Succeed'
+    return json.dumps(result, default=np_encoder)
 
 if __name__ == '__main__':
     app.debug=True
