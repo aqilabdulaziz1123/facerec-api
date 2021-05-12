@@ -13,7 +13,7 @@ from PIL import Image
 from io import BytesIO
 from flask_jwt_extended import create_access_token, JWTManager, jwt_required, get_jwt_identity
 from flask_cors import CORS
-from downloadHandler import download_by_url, video_to_audio, analyze_video, get_detail, run_inference, np_encoder
+from downloadHandler import download_by_url, video_to_audio, analyze_video, np_encoder, aggregate_text
 import json
 
 
@@ -342,6 +342,10 @@ def download():
         video_path = download_by_url(req['url'])
         video_to_audio(video_path, 'audio')
         result = analyze_video(video_path)
+        
+        res_text = aggregate_text([i['text'] for i in result['result_feature']])
+        result['agg_text'] = res_text
+
     except Error as E:
         return 'Err'
     return json.dumps(result, default=np_encoder)

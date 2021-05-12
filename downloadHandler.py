@@ -9,6 +9,7 @@ import os
 import moviepy.editor as mp
 import time
 import numpy as np
+from Levenshtein import distance
 
 reader = easyocr.Reader(['en'])
 
@@ -99,3 +100,34 @@ def run_inference(frame):
 def np_encoder(object):
     if isinstance(object, np.generic):
         return object.item()
+
+def distance_text(a,b):
+    if max(len(a),len(b))==0:
+        return 1
+    return distance(a,b)/max(len(a),len(b))
+
+def reshape_text(data1, data2, idx):
+    for word in data2:
+        used_word = word[1].lower()
+        found = False
+        for key in data1.keys():
+            dist = distance_text(key,used_word)
+            if dist<0.1:
+                
+                if data1[key][-1]['end']+1 == idx:
+                    data1[key][-1]['end']+=1
+                else:
+                    data1[key].append({'start':idx, 'end':idx})
+                found = True
+                break
+        if not found:
+#             print('word : ',word[1].lower())
+#             print(data1)
+            data1[used_word] = [{'start':idx, 'end':idx}]
+    return data1
+    
+def aggregate_text(all_text):
+    aggregated_text = {}
+    for idx,txt in enumerate(all_text):
+        aggregated_text = reshape_text(aggregated_text,txt,idx)
+    return aggregated_text
