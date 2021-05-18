@@ -88,13 +88,13 @@ def get_detail(vid_file):
  
 def run_inference(frame):
     all_text_here = reader.readtext(frame) #OCR
-    # all_faces_locations = face_recognition.face_locations(frame)
-    # all_faces_features_here = face_recognition.face_encodings(frame)#FACE
+    all_faces_locations = face_recognition.face_locations(frame)
+     all_faces_features_here = face_recognition.face_encodings(frame)#FACE
     
     return {
         'text':all_text_here,
-        # 'faces_location':all_faces_locations,
-        # 'faces_features':all_faces_features_here
+         'faces_location':all_faces_locations,
+         'faces_features':all_faces_features_here
     }
 
 def np_encoder(object):
