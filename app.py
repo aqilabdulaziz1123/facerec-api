@@ -13,7 +13,7 @@ from PIL import Image
 from io import BytesIO
 from flask_jwt_extended import create_access_token, JWTManager, jwt_required, get_jwt_identity
 from flask_cors import CORS
-from downloadHandler import download_by_url, video_to_audio, analyze_video, np_encoder, aggregate_text
+from downloadHandler import aggregate_faces, download_by_url, video_to_audio, analyze_video, np_encoder, aggregate_text, aggregate_faces, reshape_faces
 import json
 
 
@@ -335,8 +335,8 @@ def minio():
     #     return jsonify({'error' : str(E)})
     return jsonify({"STATUS" : 200,"MESSAGE" : "succeed"})
 
-@app.route('/download', methods=['GET'])
-def download():
+@app.route('/downloadOCR', methods=['GET'])
+def downloadOCR():
     req = request.args
     try:
         video_path = download_by_url(req['url'])
@@ -345,6 +345,20 @@ def download():
         
         res_text = aggregate_text([i['text'] for i in result['result_feature']])
         result['agg_text'] = res_text
+
+    except Error as E:
+        return 'Err'
+    return json.dumps(result, default=np_encoder)
+
+@app.route('/downloadFace', methods=['GET'])
+def downloadFace():
+    req = request.args
+    try:
+        video_path = download_by_url(req['url'])
+        result = analyze_video(video_path)
+        
+        res_face = aggregate_faces([i['faces_features'] for i in result['result_feature']])
+        result['agg_faces'] = res_face
 
     except Error as E:
         return 'Err'
