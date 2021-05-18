@@ -131,3 +131,27 @@ def aggregate_text(all_text):
     for idx,txt in enumerate(all_text):
         aggregated_text = reshape_text(aggregated_text,txt,idx)
     return aggregated_text
+
+def reshape_faces(data1, data2, idx):
+    for face1 in data2:
+        found = False
+        for k in data1.keys():
+            dis = face_recognition.face_distance([data1[k]['face_image']] , face1)
+            if dis<0.4:
+                data1[k]['time'].append(idx)
+                found=True
+                break
+        if not found:
+            if len(data1.keys())>0:
+                new_idx = max(list(data1.keys()))+1
+            else:
+                new_idx=0
+            data1[new_idx] = {'face_image':face1,'time':[idx]}        
+    return data1
+
+
+def aggregate_faces(all_faces):
+    aggregated_faces = {}
+    for idx,faces in enumerate(all_faces):
+        aggregated_faces = reshape_faces(aggregated_faces,faces,idx)
+    return aggregated_faces
